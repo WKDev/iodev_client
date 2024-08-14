@@ -5,7 +5,7 @@ services:
     privileged: true
     network_mode: host
     volumes:
-      - ${HOME}/iodev_node/configurations/mediamtx.yml:/mediamtx.yml
+      - ${HOME}/iodev_client/configurations/mediamtx.yml:/mediamtx.yml
       - /dev/video0:/dev/video0
       - /dev/video2:/dev/video2
     stdin_open: true
@@ -22,8 +22,8 @@ services:
     restart: unless-stopped
     volumes:
       - /dev/gpiomem:/dev/gpiomem
-      - ${HOME}/iodev_node/configurations/:/iodev
-      - ${HOME}/iodev_node/logs:/logs
+      - ${HOME}/iodev_client/configurations/:/iodev
+      - ${HOME}/iodev_client/logs:/logs
     tty: true
     hostname: ${HOSTNAME}
     environment:
