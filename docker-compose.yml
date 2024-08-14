@@ -1,0 +1,30 @@
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest-ffmpeg
+    container_name: mediamtx
+    privileged: true
+    network_mode: host
+    volumes:
+      - ${HOME}/iodev_node/configurations/mediamtx.yml:/mediamtx.yml
+      - /dev/video0:/dev/video0
+      - /dev/video2:/dev/video2
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  mqtt_client:
+    build:
+      context: mqtt_client
+      dockerfile: Dockerfile
+    image: mqtt_client:8.13
+    container_name: mqtt_client_container
+    privileged: true  
+    restart: unless-stopped
+    volumes:
+      - /dev/gpiomem:/dev/gpiomem
+      - ${HOME}/iodev_node/configurations/:/iodev
+      - ${HOME}/iodev_node/logs:/logs
+    tty: true
+    hostname: ${HOSTNAME}
+    environment:
+      - HOSTNAME=${HOSTNAME}

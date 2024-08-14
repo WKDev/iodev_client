@@ -1,0 +1,20 @@
+FROM nvcr.io/nvidia/l4t-base:r32.7.1
+
+WORKDIR /app
+
+COPY . /app
+
+COPY requirements.txt ./
+
+# Install the Python dependencies
+RUN apt-get update && apt-get install -y \
+    python3-dev gcc \
+    && pip3 install --no-cache-dir -r requirements.txt \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Jetson GPIO library
+RUN pip3 install Jetson.GPIO
+
+# Set the entrypoint to run your Python scripts
+ENTRYPOINT ["python3", "main.py"]
