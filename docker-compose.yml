@@ -1,3 +1,4 @@
+version: '3'
 services:
   mediamtx:
     image: bluenviron/mediamtx:latest-ffmpeg
@@ -27,4 +28,4 @@ services:
     tty: true
     hostname: ${HOSTNAME}
     environment:
-      - HOSTNAME=${HOSTNAME}
+      HOSTNAME: ${HOSTNAME}
