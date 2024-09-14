@@ -73,7 +73,7 @@ def on_message(client, userdata, msg):
                 gpio_controller.activate_pin(2)
 
 # Initialize MQTT client
-client_id = f'python-mqtt-{random.randint(0, 1000)}'
+client_id = f'iodev_client_{random.randint(0, 1000)}'
 
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -90,8 +90,26 @@ while True:
         break
 
     except Exception as e:
-        logger.error(f"Failed to connect to MQTT broker at {mqtt_broker}:{mqtt_port}, retrying in 1 seconds")
-        time.sleep(1)
+        logger.error(f"Failed to connect to MQTT broker at {mqtt_broker}:{mqtt_port}, retrying in 5 seconds")
+        time.sleep(5)
+
+
+# publish messages to the broker every 1 minute
+def publish_time():
+    while True:
+        try:
+            current_time = int(time.time())
+            client.publish(f"{hostname}/stat/time", current_time)
+            logger.info(f"Published time: {current_time}")
+            time.sleep(60)
+        except Exception as e:
+            logger.error(f"Failed to publish time: {e}")
+            time.sleep(5)
+
+# Start the thread for publishing time
+publish_thread = threading.Thread(target=publish_time)
+publish_thread.start()
+
 
 
 # Loop forever, handling reconnects and messages
