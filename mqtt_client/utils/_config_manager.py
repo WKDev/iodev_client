@@ -30,7 +30,7 @@ default_config = {
 }
 
 class ConfigManager:
-    def __init__(self, config_path ='iodev.yaml'):
+    def __init__(self, config_path ='/iodev/iodev.yaml'):
         self.path = config_path
         self.config : dict = self.load_config(self.path)
 
