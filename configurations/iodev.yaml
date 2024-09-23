@@ -1,26 +1,30 @@
 gpio:
-  default_pins:
-  - 1
-  - 2
-  - 3
   jetson_pins:
   - 12
   - 13
   - 18
-  release_time: 3
   rpi_pins:
   - 16
   - 20
   - 21
-logging:
-  file: /MQTTClient.log
-  level: INFO
 
+  mode: 0 # 0 all, 1 random
+  inverse: false
+  duration: 1 # seconds
+
+logging:
+  file: /logs/gpio_driver.log
+  level: INFO
 mqtt:
   broker:
     ip: 192.168.11.38
     port: 1883
   device_type: dss
-  mode: 1
-  release_time: '10'
-  time: '1723611409'
+  device_name: dss1
+
+stat: 
+  topic: stat
+  publish_rate: 5 # seconds
+
+cmd:
+  topic: cmd
