@@ -9,71 +9,51 @@ import logging
 from logging.handlers import RotatingFileHandler
 import random
 
-from utils._sys_driver import get_device_type, GPIOController
+from utils._gpio_driver import GPIOController
 from utils._config_manager import ConfigManager
 from utils._log import init_logger
 
-hostname = socket.gethostname()
-hostname = hostname.replace('.local', '')
-print(f"Hostname: {hostname}")
+cm = ConfigManager()
+logger = init_logger(cm.config)
 
-config = ConfigManager()
-logger = init_logger(config.config)
+device_name = cm.config['mqtt'].get("device_name","dss0")
 
-device_type = get_device_type()
+gpio_config = cm.config['gpio']
 
-gpio_pins = config.config['gpio']['default_pins']
-if device_type == "rpi":
-    gpio_pins = config.config['gpio']['rpi_pins']
-elif device_type == "jetson":
-    gpio_pins = config.config['gpio']['jetson_pins']
-
-gpio_controller = GPIOController(gpio_pins, config.config['gpio']['release_time'])
+gpio_controller = GPIOController(pins = gpio_config['rpi_pins'], 
+                                 run_on_high =gpio_config['run_on_high'],
+                                 release_time = gpio_config['duration'],
+                                 mode= gpio_config['mode'])
 
 # Callback for connection
 def on_connect(client, userdata, flags, reason_code, properties):
     print("connected")
     if reason_code == 0:
         logger.info("Connected to MQTT broker")
-        client.subscribe(f"{hostname}/time")
-        client.subscribe(f"{hostname}/mode")
-        client.subscribe(f"{hostname}/release_time")
+        client.subscribe(f"{device_name}/cmd/time")
+        client.subscribe(f"{device_name}/cmd/mode")
+        client.subscribe(f"{device_name}/cmd/duration")
 
-        print(f"Subscribed to {hostname}/time")
-        print(f"Subscribed to {hostname}/mode")
-        print(f"Subscribed to {hostname}/release_time")
+        print(f"Subscribed to {device_name}/cmd/time")
+        print(f"Subscribed to {device_name}/cmd/mode")
+        print(f"Subscribed to {device_name}/cmd/duration")
     else:
-        logger.error(f"Failed to connect to MQTT broker, return code {rc}")
+        logger.error(f"Failed to connect to MQTT broker")
 
 # Callback for received message
 def on_message(client, userdata, msg):
     logger.info(f"Topic: {msg.topic}, Message: {msg.payload.decode()}")
     topic = msg.topic.split('/')[-1]
-
+    print(topic)
     
-    if topic in ['mode', 'release_time', 'time']:
-        config.config['mqtt'][topic] = msg.payload.decode()
-
-        config.save_config()
+    if topic is not 'time':
+        print("saving config...")
+        cm.config['gpio'][topic] = msg.payload.decode()
+        cm.save_config()
         
-        # If the topic is 'release_time', update GPIO release time
-        if topic == 'release_time':
-            gpio_controller.set_release_time(int(msg.payload.decode()))
-        
-        # If the topic is 'time', handle GPIO logic
-        elif topic == 'time':   
-            new_timestamp = int(msg.payload.decode())
-            current_timestamp = int(time.time())
-            if abs(current_timestamp - new_timestamp) <= 5:
-                logger.info("Time is in sync")
-                logger.info(f"Activating GPIO pins for {gpio_controller.GPIO_INTERVAL} seconds")
-
-                gpio_controller.activate_pin(0)
-                gpio_controller.activate_pin(1)
-                gpio_controller.activate_pin(2)
 
 # Initialize MQTT client
-client_id = f'iodev_client_{random.randint(0, 1000)}'
+client_id = f'{device_name}_{random.randint(0, 1000)}'
 
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -81,8 +61,8 @@ client.on_connect = on_connect
 client.on_message = on_message
 
 # Read MQTT broker address and connect
-mqtt_broker = config.config['mqtt']['broker']['ip']
-mqtt_port = config.config['mqtt']['broker']['port']
+mqtt_broker = cm.config['mqtt']['broker']['ip']
+mqtt_port = cm.config['mqtt']['broker']['port']
 
 while True:
     try:
@@ -91,6 +71,7 @@ while True:
 
     except Exception as e:
         logger.error(f"Failed to connect to MQTT broker at {mqtt_broker}:{mqtt_port}, retrying in 5 seconds")
+        print(e)
         time.sleep(5)
 
 
@@ -99,7 +80,7 @@ def publish_time():
     while True:
         try:
             current_time = int(time.time())
-            client.publish(f"{hostname}/stat/time", current_time)
+            client.publish(f"{device_name}/stat/time", current_time)
             logger.info(f"Published time: {current_time}")
             time.sleep(60)
         except Exception as e:
@@ -109,8 +90,6 @@ def publish_time():
 # Start the thread for publishing time
 publish_thread = threading.Thread(target=publish_time)
 publish_thread.start()
-
-
 
 # Loop forever, handling reconnects and messages
 client.loop_forever()

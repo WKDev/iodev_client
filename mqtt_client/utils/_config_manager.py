@@ -32,7 +32,7 @@ default_config = {
 class ConfigManager:
     def __init__(self, config_path ='iodev.yaml'):
         self.path = config_path
-        self.config = self.load_config(self.path)
+        self.config : dict = self.load_config(self.path)
 
     def load_config(self,config_path):
         # 설정 파일 로드
@@ -52,6 +52,7 @@ class ConfigManager:
         return config
 
     def save_config(self):
+        print(f"save to {self.path}")
         with open(self.path, 'w') as file:
                 yaml.safe_dump(self.config, file)
 
