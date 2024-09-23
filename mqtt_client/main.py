@@ -20,8 +20,10 @@ device_name = cm.config['mqtt'].get("device_name","dss0")
 
 gpio_config = cm.config['gpio']
 
+print(gpio_config)
+
 gpio_controller = GPIOController(pins = gpio_config['rpi_pins'], 
-                                 run_on_high =gpio_config['run_on_high'],
+                                 inverse =gpio_config['inverse'],
                                  release_time = gpio_config['duration'],
                                  mode= gpio_config['mode'])
 
@@ -46,7 +48,7 @@ def on_message(client, userdata, msg):
     topic = msg.topic.split('/')[-1]
     print(topic)
     
-    if topic is not 'time':
+    if topic != 'time':
         print("saving config...")
         cm.config['gpio'][topic] = msg.payload.decode()
         cm.save_config()

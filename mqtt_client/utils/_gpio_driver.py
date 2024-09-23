@@ -35,7 +35,7 @@ class AssertPi:
 class GPIOController:
     def __init__(self, **kwargs):
         self.pins = kwargs.get('pins', [16,20,21])
-        self.run_on_high = kwargs.get('run_on_high', False)
+        self.inverse = kwargs.get('inverse', False)
         self.duration = kwargs.get('duration', 10)
         self.mode = kwargs.get('mode', 0)
         self.GPIO = None
@@ -75,8 +75,8 @@ class GPIOController:
         print(f"running gpio thread")
         print(f"time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, mode: {'all(0)' if self.mode == 0 else 'random(1)'}")
         try:
-            run_sig = self.GPIO.HIGH if self.run_on_high else self.GPIO.LOW
-            stop_sig = self.GPIO.LOW if self.run_on_high else self.GPIO.HIGH
+            run_sig = self.GPIO.HIGH if self.inverse else self.GPIO.LOW
+            stop_sig = self.GPIO.LOW if self.inverse else self.GPIO.HIGH
             print(f"pins: {self.pins}, trigger on: {'HIGH' if run_sig == self.GPIO.HIGH else 'LOW'}")
 
             self.write_all(run_sig)
